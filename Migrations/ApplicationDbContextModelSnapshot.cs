@@ -207,14 +207,11 @@ namespace pyatform.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("ExecutionTime")
+                    b.Property<int?>("ExecutionTimeMs")
                         .HasColumnType("integer");
 
                     b.Property<bool>("HasPassedTests")
                         .HasColumnType("boolean");
-
-                    b.Property<int?>("MemoryUsed")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("SubmissionTime")
                         .HasColumnType("timestamp with time zone");

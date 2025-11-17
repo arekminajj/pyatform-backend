@@ -66,5 +66,13 @@ public class SolutionController : ControllerBase
         var result = await _solutionService.DeleteSolutionByIdAsync(id, userId);
         if (!result) return NotFound();
         return NoContent();
-    } 
+    }
+
+    [HttpGet("test/{id}")]
+    public async Task<ActionResult<SolutionTestResult>> TestSolution(int id)
+    {
+        var result = await _solutionService.TestSolutionAsync(id);
+
+        return Ok(result);
+    }
 }

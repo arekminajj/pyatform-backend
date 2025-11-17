@@ -38,8 +38,32 @@ public class SolutionService : ISolutionService
             UserId = solution.UserId,
             ChallengeId = solution.ChallengeId,
             Content = solution.Content,
-            ExecutionTime = solution.ExecutionTime,
-            MemoryUsed = solution.MemoryUsed,
+            ExecutionTimeMs = solution.ExecutionTimeMs,
+            HasPassedTests = solution.HasPassedTests,
+            SubmissionTime = solution.SubmissionTime
+        };
+    }
+
+    public async Task<SolutionDto?> AddTestResultsToSolutionAsync(int id, AddTestResultsToSolutionDto dto)
+    {
+        var solution = await _ctx.Solutions
+            .FirstOrDefaultAsync(s => s.Id == id);
+
+        if (solution == null)
+            return null;
+
+        solution.ExecutionTimeMs = dto.ExecutionTimeMs;
+        solution.HasPassedTests = dto.HasPassedTests;
+
+        await _ctx.SaveChangesAsync();
+
+        return new SolutionDto
+        {
+            Id = solution.Id,
+            UserId = solution.UserId,
+            ChallengeId = solution.ChallengeId,
+            Content = solution.Content,
+            ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime
         };
@@ -72,8 +96,7 @@ public class SolutionService : ISolutionService
             UserId = s.UserId,
             ChallengeId = s.ChallengeId,
             Content = s.Content,
-            ExecutionTime = s.ExecutionTime,
-            MemoryUsed = s.MemoryUsed,
+            ExecutionTimeMs = s.ExecutionTimeMs,
             HasPassedTests = s.HasPassedTests,
             SubmissionTime = s.SubmissionTime
         });
@@ -89,8 +112,7 @@ public class SolutionService : ISolutionService
             UserId = s.UserId,
             ChallengeId = s.ChallengeId,
             Content = s.Content,
-            ExecutionTime = s.ExecutionTime,
-            MemoryUsed = s.MemoryUsed,
+            ExecutionTimeMs = s.ExecutionTimeMs,
             HasPassedTests = s.HasPassedTests,
             SubmissionTime = s.SubmissionTime
         });
@@ -98,7 +120,8 @@ public class SolutionService : ISolutionService
 
     public async Task<SolutionDto?> GetSolutionByIdAsync(int id)
     {
-        var solution = await _ctx.Solutions.FirstOrDefaultAsync(s => s.Id == id);
+        var solution = await _ctx.Solutions
+        .FirstOrDefaultAsync(s => s.Id == id);
 
         if (solution == null)
             return null;
@@ -109,15 +132,21 @@ public class SolutionService : ISolutionService
             UserId = solution.UserId,
             ChallengeId = solution.ChallengeId,
             Content = solution.Content,
-            ExecutionTime = solution.ExecutionTime,
-            MemoryUsed = solution.MemoryUsed,
+            ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime
         };
     }
 
-    public async Task<SolutionTestResult> TestSolutionAsync(Solution solution)
+    public async Task<SolutionTestResult> TestSolutionAsync(int solutionId)
     {
+        var solution = await _ctx.Solutions
+        .Include(s => s.Challenge)
+        .FirstOrDefaultAsync(s => s.Id == solutionId);
+
+        if (solution == null)
+            throw new KeyNotFoundException($"Solution of id: {solutionId} was not found");
+
         var solutionCode = solution.Content;
         var testCode = solution.Challenge?.TestCode;
 
@@ -133,8 +162,9 @@ public class SolutionService : ISolutionService
         Directory.CreateDirectory(tempDir);
         var solutionfilePath = Path.Combine(tempDir, "solution_script.py");
         await File.WriteAllTextAsync(solutionfilePath, solutionCode);
-        var testFilePath = Path.Combine(tempDir, "test.py");
+        var testFilePath = Path.Combine(tempDir, "test_script.py");
         await File.WriteAllTextAsync(testFilePath, testCode);
+        string containerName = $"pyatform-test-{Guid.NewGuid()}";
 
         try
         {
@@ -142,25 +172,38 @@ public class SolutionService : ISolutionService
             {
                 FileName = "docker",
                 ArgumentList = {
-                    "run", "--rm",
+                    "run", "--rm", "--name", containerName,
                     "-v", $"{tempDir}:/app",
                     "-w", "/app",
-                    "python:3.11",
-                    "python", "test.py"
+                    "pyatform-python-pytest",
+                    "pytest", "-q", "--disable-warnings", "--maxfail=1", "--timeout=2"
                 },
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
 
+            var sw = Stopwatch.StartNew();
+
             var process = Process.Start(psi);
             if (process == null)
-            {
                 throw new InvalidOperationException("Failed to start the docker process.");
-            }
+
+            await process.WaitForExitAsync();
+            sw.Stop();
+            var ExecutionTimeMs = sw.ElapsedMilliseconds;
+
             var output = await process.StandardOutput.ReadToEndAsync();
             var error = await process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync();
 
+            var addResultsDto = new AddTestResultsToSolutionDto
+            {
+                ExecutionTimeMs = (int)ExecutionTimeMs,
+                HasPassedTests = process.ExitCode == 0
+            };
+
+            await AddTestResultsToSolutionAsync(solutionId, addResultsDto);
+            
             return new SolutionTestResult
             {
                 ReturnCode = process.ExitCode,

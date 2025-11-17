@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace pyatform.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigrations : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -192,8 +192,7 @@ namespace pyatform.Migrations
                     UserId = table.Column<string>(type: "text", nullable: false),
                     ChallengeId = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
-                    ExecutionTime = table.Column<int>(type: "integer", nullable: true),
-                    MemoryUsed = table.Column<int>(type: "integer", nullable: true),
+                    ExecutionTimeMs = table.Column<int>(type: "integer", nullable: true),
                     HasPassedTests = table.Column<bool>(type: "boolean", nullable: false),
                     SubmissionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

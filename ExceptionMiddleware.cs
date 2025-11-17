@@ -23,6 +23,7 @@ public class ExceptionMiddleware
 
             context.Response.StatusCode = ex switch
             {
+                InvalidOperationException => StatusCodes.Status500InternalServerError,
                 KeyNotFoundException => StatusCodes.Status404NotFound,
                 ArgumentException => StatusCodes.Status400BadRequest,
                 _ => StatusCodes.Status500InternalServerError
