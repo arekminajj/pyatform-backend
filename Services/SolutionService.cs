@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using pyatform.Data;
 using pyatform.DTOs.Solution;
 using pyatform.Models;
@@ -32,6 +33,13 @@ public class SolutionService : ISolutionService
         await _ctx.Solutions.AddAsync(solution);
         await _ctx.SaveChangesAsync();
 
+        SolutionTestResult testResult = await TestSolutionAsync(solution.Content, challange.TestCode!);
+        await AddTestResultsToSolutionAsync(solution.Id, new AddTestResultsToSolutionDto
+        {
+            ExecutionTimeMs = 0,
+            HasPassedTests = testResult.ReturnCode == 0
+        });
+
         return new SolutionDto
         {
             Id = solution.Id,
@@ -42,12 +50,14 @@ public class SolutionService : ISolutionService
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime
         };
+
+        
     }
 
-    public async Task<SolutionDto?> AddTestResultsToSolutionAsync(int id, AddTestResultsToSolutionDto dto)
+    public async Task<SolutionDto?> AddTestResultsToSolutionAsync(int solutionId, AddTestResultsToSolutionDto dto)
     {
         var solution = await _ctx.Solutions
-            .FirstOrDefaultAsync(s => s.Id == id);
+            .FirstOrDefaultAsync(s => s.Id == solutionId);
 
         if (solution == null)
             return null;
@@ -138,7 +148,7 @@ public class SolutionService : ISolutionService
         };
     }
 
-    public async Task<SolutionTestResult> TestSolutionAsync(int solutionId)
+    public async Task<SolutionTestResult> TestSolutionAndSaveAsync(int solutionId)
     {
         var solution = await _ctx.Solutions
         .Include(s => s.Challenge)
@@ -203,6 +213,71 @@ public class SolutionService : ISolutionService
             };
 
             await AddTestResultsToSolutionAsync(solutionId, addResultsDto);
+            
+            return new SolutionTestResult
+            {
+                ReturnCode = process.ExitCode,
+                Output = output,
+                Error = error
+            };
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+    
+    public async Task<SolutionTestResult> TestSolutionAsync(string solutionCode, string testCode)
+    {
+        if (string.IsNullOrEmpty(solutionCode))
+            throw new Exception("Solution code cannot be null!");
+        if (string.IsNullOrEmpty(testCode))
+            throw new Exception("Test code cannot be null!");
+        
+        //todo: check new TempDirectory();
+        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDir);
+        var solutionfilePath = Path.Combine(tempDir, "solution_script.py");
+        await File.WriteAllTextAsync(solutionfilePath, solutionCode);
+        var testFilePath = Path.Combine(tempDir, "test_script.py");
+        await File.WriteAllTextAsync(testFilePath, testCode);
+        string containerName = $"pyatform-test-{Guid.NewGuid()}";
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "docker",
+                ArgumentList = {
+                    "run", "--rm", "--name", containerName,
+                    "-v", $"{tempDir}:/app",
+                    "-w", "/app",
+                    "pyatform-python-pytest",
+                    "pytest", "-q", "--disable-warnings", "--maxfail=1", "--timeout=2"
+                },
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            var sw = Stopwatch.StartNew();
+
+            var process = Process.Start(psi);
+            if (process == null)
+                throw new InvalidOperationException("Failed to start the docker process.");
+
+            await process.WaitForExitAsync();
+            sw.Stop();
+            var ExecutionTimeMs = sw.ElapsedMilliseconds;
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            var addResultsDto = new AddTestResultsToSolutionDto
+            {
+                ExecutionTimeMs = (int)ExecutionTimeMs,
+                HasPassedTests = process.ExitCode == 0
+            };
             
             return new SolutionTestResult
             {

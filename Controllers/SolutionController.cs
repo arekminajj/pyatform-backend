@@ -71,7 +71,7 @@ public class SolutionController : ControllerBase
     [HttpGet("test/{id}")]
     public async Task<ActionResult<SolutionTestResult>> TestSolution(int id)
     {
-        var result = await _solutionService.TestSolutionAsync(id);
+        var result = await _solutionService.TestSolutionAndSaveAsync(id);
 
         return Ok(result);
     }
