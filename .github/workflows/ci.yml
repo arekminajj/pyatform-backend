@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pyatform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pyatform"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=pyatform;Username=postgres;Password=postgres"
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up .NET 8
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore pyatform.sln
+
+    - name: Build
+      run: dotnet build pyatform.sln --configuration Release --no-restore
+
+    - name: Run EF migrations
+      run: dotnet ef database update --project ./pyatform.csproj --startup-project ./pyatform.csproj
+
+    - name: Run tests
+      run: dotnet test pyatform.sln --no-build --verbosity normal
