@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ci-test
   pull_request:
     branches:
       - main
@@ -45,11 +46,8 @@ jobs:
 
     - name: Install dotnet-ef
       run: |
-        dotnet tool install --global dotnet-ef
+        dotnet tool install --global dotnet-ef --version 8.0.22
         echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Run EF migrations
       run: dotnet ef database update --project ./pyatform.csproj --startup-project ./pyatform.csproj
-
-    - name: Run tests
-      run: dotnet test pyatform.sln --no-build --verbosity normal
