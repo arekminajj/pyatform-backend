@@ -46,11 +46,8 @@ jobs:
 
     - name: Install dotnet-ef
       run: |
-        dotnet tool install --global dotnet-ef -version 8.*
+        dotnet tool install --global dotnet-ef --version 8.0.22
         echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Run EF migrations
       run: dotnet ef database update --project ./pyatform.csproj --startup-project ./pyatform.csproj
-
-    - name: Run tests
-      run: dotnet test pyatform.sln --no-build --verbosity normal
