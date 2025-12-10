@@ -43,6 +43,11 @@ jobs:
     - name: Build
       run: dotnet build pyatform.sln --configuration Release --no-restore
 
+    - name: Install dotnet-ef
+      run: |
+        dotnet tool install --global dotnet-ef
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
     - name: Run EF migrations
       run: dotnet ef database update --project ./pyatform.csproj --startup-project ./pyatform.csproj
 
