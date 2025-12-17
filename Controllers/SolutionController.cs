@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using pyatform.Models;
 using pyatform.Services;
 using pyatform.DTOs.Solution;
+using Npgsql.Internal;
 
 namespace pyatform.Controllers;
 
@@ -13,11 +14,13 @@ namespace pyatform.Controllers;
 public class SolutionController : ControllerBase
 {
     private readonly ISolutionService _solutionService;
+    private readonly IChallengeService _challangeService;
     private readonly UserManager<User> _userManager;
-    public SolutionController(ISolutionService solutionService, UserManager<User> userManager)
+    public SolutionController(ISolutionService solutionService, IChallengeService challengeService, UserManager<User> userManager)
     {
         _solutionService = solutionService;
         _userManager = userManager;
+        _challangeService = challengeService;
     }
 
     [HttpGet]
@@ -71,8 +74,13 @@ public class SolutionController : ControllerBase
     [HttpGet("test/{id}")]
     public async Task<ActionResult<SolutionTestResult>> TestSolution(int id)
     {
-        var result = await _solutionService.TestSolutionAndSaveAsync(id);
+        var solution = await _solutionService.GetSolutionByIdAsync(id);
+        if (solution == null) return NotFound();
+        var challange = await _challangeService.GetChallengeByIdAsync(solution.ChallengeId);
+        if (challange == null) throw new InvalidOperationException("Challenge missing");
 
-        return Ok(result);
+        var testResult = await _solutionService.TestSolutionAsync(solution.Id, challange.TestCode!);
+
+        return Ok(testResult);
     }
 }

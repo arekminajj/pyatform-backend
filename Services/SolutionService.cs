@@ -33,7 +33,7 @@ public class SolutionService : ISolutionService
         await _ctx.Solutions.AddAsync(solution);
         await _ctx.SaveChangesAsync();
 
-        SolutionTestResult testResult = await TestSolutionAsync(solution.Content, challange.TestCode!);
+        SolutionTestResult testResult = await TestSolutionAsync(solution.Id, challange.TestCode!);
         await AddTestResultsToSolutionAsync(solution.Id, new AddTestResultsToSolutionDto
         {
             ExecutionTimeMs = 0,
@@ -50,8 +50,6 @@ public class SolutionService : ISolutionService
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime
         };
-
-        
     }
 
     public async Task<SolutionDto?> AddTestResultsToSolutionAsync(int solutionId, AddTestResultsToSolutionDto dto)
@@ -147,98 +145,21 @@ public class SolutionService : ISolutionService
             SubmissionTime = solution.SubmissionTime
         };
     }
-
-    public async Task<SolutionTestResult> TestSolutionAndSaveAsync(int solutionId)
+   
+    public async Task<SolutionTestResult> TestSolutionAsync(int solutionId, string testCode)
     {
-        var solution = await _ctx.Solutions
-        .Include(s => s.Challenge)
-        .FirstOrDefaultAsync(s => s.Id == solutionId);
-
+        var solution = _ctx.Solutions.FirstOrDefault(s => s.Id == solutionId);
         if (solution == null)
-            throw new KeyNotFoundException($"Solution of id: {solutionId} was not found");
+            throw new Exception($"Does not exist a solution with id:{solutionId}");
 
-        var solutionCode = solution.Content;
-        var testCode = solution.Challenge?.TestCode;
-
-        if (testCode == null)
-        {
-            throw new NullReferenceException(
-                "The solution is not associated with a challenge or the challenge has no test code."
-            );
-        }
-
-        //todo: check new TempDirectory();
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        var solutionfilePath = Path.Combine(tempDir, "solution_script.py");
-        await File.WriteAllTextAsync(solutionfilePath, solutionCode);
-        var testFilePath = Path.Combine(tempDir, "test_script.py");
-        await File.WriteAllTextAsync(testFilePath, testCode);
-        string containerName = $"pyatform-test-{Guid.NewGuid()}";
-
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "docker",
-                ArgumentList = {
-                    "run", "--rm", "--name", containerName,
-                    "-v", $"{tempDir}:/app",
-                    "-w", "/app",
-                    "pyatform-python-pytest",
-                    "pytest", "-q", "--disable-warnings", "--maxfail=1", "--timeout=2"
-                },
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            var sw = Stopwatch.StartNew();
-
-            var process = Process.Start(psi);
-            if (process == null)
-                throw new InvalidOperationException("Failed to start the docker process.");
-
-            await process.WaitForExitAsync();
-            sw.Stop();
-            var ExecutionTimeMs = sw.ElapsedMilliseconds;
-
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
-
-            var addResultsDto = new AddTestResultsToSolutionDto
-            {
-                ExecutionTimeMs = (int)ExecutionTimeMs,
-                HasPassedTests = process.ExitCode == 0
-            };
-
-            await AddTestResultsToSolutionAsync(solutionId, addResultsDto);
-            
-            return new SolutionTestResult
-            {
-                ReturnCode = process.ExitCode,
-                Output = output,
-                Error = error
-            };
-        }
-        finally
-        {
-            Directory.Delete(tempDir, true);
-        }
-    }
-    
-    public async Task<SolutionTestResult> TestSolutionAsync(string solutionCode, string testCode)
-    {
-        if (string.IsNullOrEmpty(solutionCode))
-            throw new Exception("Solution code cannot be null!");
         if (string.IsNullOrEmpty(testCode))
-            throw new Exception("Test code cannot be null!");
+            throw new Exception("Test code cannot be null");
         
         //todo: check new TempDirectory();
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var tempDir = Path.Combine("/tmp", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
         var solutionfilePath = Path.Combine(tempDir, "solution_script.py");
-        await File.WriteAllTextAsync(solutionfilePath, solutionCode);
+        await File.WriteAllTextAsync(solutionfilePath, solution.Content);
         var testFilePath = Path.Combine(tempDir, "test_script.py");
         await File.WriteAllTextAsync(testFilePath, testCode);
         string containerName = $"pyatform-test-{Guid.NewGuid()}";
@@ -250,13 +171,14 @@ public class SolutionService : ISolutionService
                 FileName = "docker",
                 ArgumentList = {
                     "run", "--rm", "--name", containerName,
-                    "-v", $"{tempDir}:/app",
-                    "-w", "/app",
+                    "-v", $"{tempDir}:/tmp",
+                    "-w", "/tmp",
                     "pyatform-python-pytest",
                     "pytest", "-q", "--disable-warnings", "--maxfail=1", "--timeout=2"
                 },
                 RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardError = true,
+                WorkingDirectory = tempDir
             };
 
             var sw = Stopwatch.StartNew();
@@ -278,6 +200,8 @@ public class SolutionService : ISolutionService
                 ExecutionTimeMs = (int)ExecutionTimeMs,
                 HasPassedTests = process.ExitCode == 0
             };
+
+            await AddTestResultsToSolutionAsync(solution.Id, addResultsDto);
             
             return new SolutionTestResult
             {
