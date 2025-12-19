@@ -48,7 +48,8 @@ public class SolutionService : ISolutionService
             Content = solution.Content,
             ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
-            SubmissionTime = solution.SubmissionTime
+            SubmissionTime = solution.SubmissionTime,
+            Output = testResult.Output
         };
     }
 

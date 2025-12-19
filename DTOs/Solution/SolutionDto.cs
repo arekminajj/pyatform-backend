@@ -11,4 +11,5 @@ public class SolutionDto
     public int? ExecutionTimeMs { get; set; }
     public bool HasPassedTests { get; set; }
     public DateTime SubmissionTime { get; set; } = DateTime.UtcNow;
+    public string? Output { get; set; }
 }
