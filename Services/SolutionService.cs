@@ -74,7 +74,7 @@ public class SolutionService : ISolutionService
             Content = solution.Content,
             ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
-            SubmissionTime = solution.SubmissionTime
+            SubmissionTime = solution.SubmissionTime,
         };
     }
 
@@ -95,36 +95,28 @@ public class SolutionService : ISolutionService
         return true;
     }
 
-    public async Task<IEnumerable<SolutionDto>> GetAllSolutionsAsync()
+    public async Task<IEnumerable<SolutionDto>> GetSolutionsAsync(int? challengeId, string? userId)
     {
-        var solutions = await _ctx.Solutions.ToListAsync();
+        IQueryable<Solution> query = _ctx.Solutions;
 
-        return solutions.Select(s => new SolutionDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            ChallengeId = s.ChallengeId,
-            Content = s.Content,
-            ExecutionTimeMs = s.ExecutionTimeMs,
-            HasPassedTests = s.HasPassedTests,
-            SubmissionTime = s.SubmissionTime
-        });
-    }
+        if (challengeId.HasValue)
+            query = query.Where(s => s.ChallengeId == challengeId);
 
-    public async Task<IEnumerable<SolutionDto>> GetAllSolutionsForChallengeAsync(int ChallengeId)
-    {
-        var solutions = await _ctx.Solutions.Where(s => s.ChallengeId == ChallengeId).ToListAsync();
+        if (!string.IsNullOrEmpty(userId))
+            query = query.Where(s => s.UserId == userId);
 
-        return solutions.Select(s => new SolutionDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            ChallengeId = s.ChallengeId,
-            Content = s.Content,
-            ExecutionTimeMs = s.ExecutionTimeMs,
-            HasPassedTests = s.HasPassedTests,
-            SubmissionTime = s.SubmissionTime
-        });
+        return await query
+            .Select(s => new SolutionDto
+            {
+                Id = s.Id,
+                UserId = s.UserId,
+                ChallengeId = s.ChallengeId,
+                Content = s.Content,
+                ExecutionTimeMs = s.ExecutionTimeMs,
+                HasPassedTests = s.HasPassedTests,
+                SubmissionTime = s.SubmissionTime
+            })
+            .ToListAsync();
     }
 
     public async Task<SolutionDto?> GetSolutionByIdAsync(int id)

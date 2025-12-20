@@ -24,9 +24,11 @@ public class SolutionController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SolutionDto>>> GetSolutions()
+    public async Task<ActionResult<IEnumerable<SolutionDto>>> GetSolutions(
+        [FromQuery] int? challengeId,
+        [FromQuery] string? userId)
     {
-        var solutions = await _solutionService.GetAllSolutionsAsync();
+        var solutions = await _solutionService.GetSolutionsAsync(challengeId, userId);
 
         return Ok(solutions);
     }
