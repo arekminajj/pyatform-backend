@@ -1,4 +1,7 @@
 
+using pyatform.DTOs.TestResult;
+using pyatform.Models;
+
 namespace pyatform.DTOs.Solution;
 
 public class SolutionDto
@@ -8,8 +11,7 @@ public class SolutionDto
     public int ChallengeId { get; set; }
     // content stores code
     public required string Content { get; set; }
-    public int? ExecutionTimeMs { get; set; }
     public bool HasPassedTests { get; set; }
     public DateTime SubmissionTime { get; set; } = DateTime.UtcNow;
-    public string? Output { get; set; }
+    public TestResultDto? TestResult { get; set; }
 }

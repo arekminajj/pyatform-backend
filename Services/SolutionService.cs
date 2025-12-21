@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pyatform.Data;
 using pyatform.DTOs.Solution;
+using pyatform.DTOs.TestResult;
 using pyatform.Models;
 
 namespace pyatform.Services;
@@ -17,10 +18,13 @@ public class SolutionService : ISolutionService
     }
     public async Task<SolutionDto> AddSolutionAsync(AddSolutionDto addSolutionDto, string userId)
     {
-        var challange = await _ctx.Challenges.FirstOrDefaultAsync(c => c.Id == addSolutionDto.ChallengeId);
+        var challenge = await _ctx.Challenges.FirstOrDefaultAsync(c => c.Id == addSolutionDto.ChallengeId);
 
-        if (challange == null)
-             throw new KeyNotFoundException($"Challenge {addSolutionDto.ChallengeId} not found.");
+        if (challenge == null)
+            throw new Exception($"Challenge {addSolutionDto.ChallengeId} not found.");
+
+        if (challenge.TestCode == null)
+            throw new Exception($"Challenge {addSolutionDto.ChallengeId} has no test code.");
 
         var solution = new Solution
         {
@@ -33,12 +37,25 @@ public class SolutionService : ISolutionService
         await _ctx.Solutions.AddAsync(solution);
         await _ctx.SaveChangesAsync();
 
-        SolutionTestResult testResult = await TestSolutionAsync(solution.Id, challange.TestCode!);
-        await AddTestResultsToSolutionAsync(solution.Id, new AddTestResultsToSolutionDto
+        var testResultDto = await TestSolutionAsync(solution.Id, challenge.TestCode);
+
+        var testResult = new TestResult
         {
-            ExecutionTimeMs = 0,
-            HasPassedTests = testResult.ReturnCode == 0
-        });
+            ReturnCode = testResultDto.ReturnCode,
+            Output = testResultDto.Output,
+            Error = testResultDto.Error,
+            ExecutionTimeMs = testResultDto.ExecutionTimeMs,
+            SolutionId = solution.Id
+        };
+
+        await _ctx.TestResults.AddAsync(testResult);
+        await _ctx.SaveChangesAsync();
+
+        solution.TestResultId = testResult.Id;
+        solution.TestResult = testResult;
+        solution.HasPassedTests = testResult.ReturnCode == 0;
+
+        await _ctx.SaveChangesAsync();
 
         return new SolutionDto
         {
@@ -46,10 +63,17 @@ public class SolutionService : ISolutionService
             UserId = solution.UserId,
             ChallengeId = solution.ChallengeId,
             Content = solution.Content,
-            ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime,
-            Output = testResult.Output
+            TestResult = solution.TestResult == null ? null : new TestResultDto
+            {
+                Id = solution.TestResult.Id,
+                ReturnCode = solution.TestResult.ReturnCode,
+                Output = solution.TestResult.Output,
+                Error = solution.TestResult.Error,
+                ExecutionTimeMs = solution.TestResult.ExecutionTimeMs,
+                SolutionId = solution.TestResult.SolutionId
+            }
         };
     }
 
@@ -61,8 +85,8 @@ public class SolutionService : ISolutionService
         if (solution == null)
             return null;
 
-        solution.ExecutionTimeMs = dto.ExecutionTimeMs;
         solution.HasPassedTests = dto.HasPassedTests;
+        solution.TestResult = dto.TestResult;
 
         await _ctx.SaveChangesAsync();
 
@@ -72,9 +96,17 @@ public class SolutionService : ISolutionService
             UserId = solution.UserId,
             ChallengeId = solution.ChallengeId,
             Content = solution.Content,
-            ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
             SubmissionTime = solution.SubmissionTime,
+            TestResult = solution.TestResult == null ? null : new TestResultDto
+            {
+                Id = solution.TestResult.Id,
+                ReturnCode = solution.TestResult.ReturnCode,
+                Output = solution.TestResult.Output,
+                Error = solution.TestResult.Error,
+                ExecutionTimeMs = solution.TestResult.ExecutionTimeMs,
+                SolutionId = solution.TestResult.SolutionId
+            }
         };
     }
 
@@ -112,9 +144,9 @@ public class SolutionService : ISolutionService
                 UserId = s.UserId,
                 ChallengeId = s.ChallengeId,
                 Content = s.Content,
-                ExecutionTimeMs = s.ExecutionTimeMs,
                 HasPassedTests = s.HasPassedTests,
-                SubmissionTime = s.SubmissionTime
+                SubmissionTime = s.SubmissionTime,
+                
             })
             .ToListAsync();
     }
@@ -133,13 +165,21 @@ public class SolutionService : ISolutionService
             UserId = solution.UserId,
             ChallengeId = solution.ChallengeId,
             Content = solution.Content,
-            ExecutionTimeMs = solution.ExecutionTimeMs,
             HasPassedTests = solution.HasPassedTests,
-            SubmissionTime = solution.SubmissionTime
+            SubmissionTime = solution.SubmissionTime,
+            TestResult = solution.TestResult == null ? null : new TestResultDto
+            {
+                Id = solution.TestResult.Id,
+                ReturnCode = solution.TestResult.ReturnCode,
+                Output = solution.TestResult.Output,
+                Error = solution.TestResult.Error,
+                ExecutionTimeMs = solution.TestResult.ExecutionTimeMs,
+                SolutionId = solution.TestResult.SolutionId
+            }
         };
     }
    
-    public async Task<SolutionTestResult> TestSolutionAsync(int solutionId, string testCode)
+    public async Task<TestResultDto> TestSolutionAsync(int solutionId, string testCode)
     {
         var solution = _ctx.Solutions.FirstOrDefault(s => s.Id == solutionId);
         if (solution == null)
@@ -196,11 +236,13 @@ public class SolutionService : ISolutionService
 
             await AddTestResultsToSolutionAsync(solution.Id, addResultsDto);
             
-            return new SolutionTestResult
+            return new TestResultDto
             {
                 ReturnCode = process.ExitCode,
                 Output = output,
-                Error = error
+                Error = error,
+                ExecutionTimeMs = (int)ExecutionTimeMs,
+                SolutionId = solution.Id
             };
         }
         finally

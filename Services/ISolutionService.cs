@@ -1,4 +1,5 @@
 using pyatform.DTOs.Solution;
+using pyatform.DTOs.TestResult;
 using pyatform.Models;
 
 namespace pyatform.Services;
@@ -10,5 +11,5 @@ public interface ISolutionService
     Task<SolutionDto> AddSolutionAsync(AddSolutionDto addSolutionDto, string userId);
     Task<SolutionDto?> AddTestResultsToSolutionAsync(int id, AddTestResultsToSolutionDto dto);
     Task<bool> DeleteSolutionByIdAsync(int id, string userId);
-    Task<SolutionTestResult> TestSolutionAsync(int solutionId, string testCode);
+    Task<TestResultDto> TestSolutionAsync(int solutionId, string testCode);
 }

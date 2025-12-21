@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using pyatform.Data;
@@ -11,9 +12,11 @@ using pyatform.Data;
 namespace pyatform.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251221135819_AddTestResult")]
+    partial class AddTestResult
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -213,7 +216,7 @@ namespace pyatform.Migrations
                     b.Property<DateTime>("SubmissionTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("TestResultId")
+                    b.Property<int>("TestResultId")
                         .HasColumnType("integer");
 
                     b.Property<string>("UserId")

@@ -9,7 +9,8 @@ public class Solution
     public Challenge? Challenge { get; set; }
     // content stores code
     public required string Content { get; set; }
-    public int? ExecutionTimeMs { get; set; }
     public bool HasPassedTests { get; set; }
     public DateTime SubmissionTime { get; set; } = DateTime.UtcNow;
+    public int? TestResultId { get; set; }
+    public TestResult? TestResult { get; set; }
 }

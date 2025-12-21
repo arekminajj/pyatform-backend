@@ -74,7 +74,7 @@ public class SolutionController : ControllerBase
     }
 
     [HttpGet("test/{id}")]
-    public async Task<ActionResult<SolutionTestResult>> TestSolution(int id)
+    public async Task<ActionResult<TestResult>> TestSolution(int id)
     {
         var solution = await _solutionService.GetSolutionByIdAsync(id);
         if (solution == null) return NotFound();
