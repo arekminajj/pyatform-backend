@@ -68,7 +68,7 @@ public class UserController : ControllerBase
 
     [HttpPut("update-bio")]
     [Authorize]
-    public async Task<ActionResult> UpdateProfileBio([FromBody] UpdateBioDio dto)
+    public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateUserProfileDio dto)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
@@ -79,6 +79,12 @@ public class UserController : ControllerBase
         if (!result.Succeeded)
             return StatusCode(500, "Failed to update user bio");
 
-        return Ok();
+        return Ok(new UserDto
+        {
+            Id = user.Id,
+            Bio = user.Bio,
+            Email = user.Email,
+            ProfilePictureUrl = user.ProfilePictureUrl
+        });
     }
 }
