@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using pyatform.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,8 @@ builder.Services.AddIdentityApiEndpoints<User>()
 // custom services
 builder.Services
 .AddScoped<IChallengeService, ChallengeService>()
-.AddScoped<ISolutionService, SolutionService>();
+.AddScoped<ISolutionService, SolutionService>()
+.AddScoped<IBlobService, BlobService>();
 
 var app = builder.Build();
 

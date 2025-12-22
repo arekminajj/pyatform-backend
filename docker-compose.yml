@@ -10,6 +10,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=pyatform;Username=postgres;Password=postgres"
+      AzureBlob__Key: "${AzureBlob__Key}"
+      AzureBlob__ConnectionString: "${AzureBlob__ConnectionString}"
+      AzureBlob__ContainerName: "${AzureBlob__ContainerName}"
     ports:
       - "8080:8080"
     networks:
