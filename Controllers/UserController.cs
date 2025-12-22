@@ -31,7 +31,9 @@ public class UserController : ControllerBase
         return Ok(new UserDto
         {
             Id = user.Id,
-            ProfilePictureUrl = user.ProfilePictureUrl
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            Bio = user.Bio,
+            Email = user.Email
         });
     }
 
@@ -62,5 +64,21 @@ public class UserController : ControllerBase
             Id = user.Id,
             ProfilePictureUrl = user.ProfilePictureUrl
         });
+    }
+
+    [HttpPut("update-bio")]
+    [Authorize]
+    public async Task<ActionResult> UpdateProfileBio([FromBody] UpdateBioDio dto)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+
+        user.Bio = dto.Bio;
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+            return StatusCode(500, "Failed to update user bio");
+
+        return Ok();
     }
 }
