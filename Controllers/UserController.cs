@@ -66,7 +66,7 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpPut("update-bio")]
+    [HttpPut]
     [Authorize]
     public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateUserProfileDio dto)
     {
