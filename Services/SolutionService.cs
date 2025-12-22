@@ -154,6 +154,7 @@ public class SolutionService : ISolutionService
     public async Task<SolutionDto?> GetSolutionByIdAsync(int id)
     {
         var solution = await _ctx.Solutions
+        .Include(s => s.TestResult)
         .FirstOrDefaultAsync(s => s.Id == id);
 
         if (solution == null)
