@@ -28,7 +28,8 @@ builder.Services.AddIdentityApiEndpoints<User>()
 builder.Services
 .AddScoped<IChallengeService, ChallengeService>()
 .AddScoped<ISolutionService, SolutionService>()
-.AddScoped<IBlobService, BlobService>();
+.AddScoped<IBlobService, BlobService>()
+.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 

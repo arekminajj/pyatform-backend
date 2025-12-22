@@ -15,10 +15,12 @@ namespace pyatform.Controllers;
 public class UserController : ControllerBase
 {
     private readonly UserManager<User> _userManager;
+    private readonly IUserService _userService;
 
-    public UserController(UserManager<User> userManager)
+    public UserController(UserManager<User> userManager, IUserService userService)
     {
         _userManager = userManager;
+        _userService = userService;
     }
 
     [HttpGet]
@@ -27,6 +29,22 @@ public class UserController : ControllerBase
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
+
+        return Ok(new UserDto
+        {
+            Id = user.Id,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            Bio = user.Bio,
+            Email = user.Email
+        });
+    }
+
+    [HttpGet("{id}")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> GetUserById(string id)
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        if (user == null) return NotFound($"User with id: {id} does not exist");
 
         return Ok(new UserDto
         {
