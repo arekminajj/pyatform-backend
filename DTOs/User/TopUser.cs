@@ -2,6 +2,7 @@ namespace pyatform.DTOs.User;
 
 public class TopUser
 {
-    public string UserId { get; set; } = null!;
+    public required string UserId { get; set; }
+    public string? ProfilePictureUrl { get; set; }
     public long ChallengesCount { get; set; }
 }
