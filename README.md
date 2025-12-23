@@ -13,6 +13,14 @@ Users submit Python challenge solutions, which are safely executed inside Docker
 
 ## Running locally
 
+First add `.env` file with your Azure credentials:
+
+```
+AzureBlob__ConnectionString=<KEY>
+AzureBlob__ContainerName=<CONTAINER_NAME>
+```
+
+Then run:
 
 ```bash
 docker compose up --build
