@@ -97,9 +97,10 @@ public class ChallengeService : IChallengeService
         };
     }
 
-    public async Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync()
+    public async Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync(string? userId)
     {
-        return await _ctx.Challenges.Select(c => new ChallengeDto
+        return await _ctx.Challenges
+        .Select(c => new ChallengeDto
         {
             Id = c.Id,
             Title = c.Title,
@@ -108,11 +109,15 @@ public class ChallengeService : IChallengeService
             TestCode = c.TestCode,
             TimeLimitMs = c.TimeLimitMs,
             MemoryLimitKb = c.MemoryLimitKb,
-            UserId = c.UserId
-        }).ToListAsync();   
+            UserId = c.UserId,
+            isCompletedByUser = userId != null 
+                ? c.Solutions.Any(s => s.UserId == userId && s.HasPassedTests) 
+                : null
+        })
+        .ToListAsync();
     }
 
-    public async Task<ChallengeDto?> GetChallengeByIdAsync(int id)
+    public async Task<ChallengeDto?> GetChallengeByIdAsync(int id, string? userId)
     {
         var challenge = await _ctx.Challenges.FirstOrDefaultAsync(c => c.Id == id);
 
@@ -128,7 +133,10 @@ public class ChallengeService : IChallengeService
             TestCode = challenge.TestCode,
             TimeLimitMs = challenge.TimeLimitMs,
             MemoryLimitKb = challenge.MemoryLimitKb,
-            UserId = challenge.UserId
-        }; 
+            UserId = challenge.UserId,
+            isCompletedByUser = userId != null 
+                ? challenge.Solutions.Any(s => s.UserId == userId && s.HasPassedTests) 
+                : null
+        };
     }
 }

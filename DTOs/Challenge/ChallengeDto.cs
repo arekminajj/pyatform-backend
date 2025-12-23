@@ -10,4 +10,5 @@ public class ChallengeDto
     public int? TimeLimitMs { get; set; }
     public int? MemoryLimitKb { get; set; }
     public required string UserId { get; set; }
+    public bool? isCompletedByUser { get; set; }
 }

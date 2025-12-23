@@ -6,8 +6,8 @@ namespace pyatform.Services;
 
 public interface IChallengeService
 {
-    public Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync();
-    public Task<ChallengeDto?> GetChallengeByIdAsync(int id);
+    public Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync(string? userId = null);
+    public Task<ChallengeDto?> GetChallengeByIdAsync(int id, string? userId = null);
     Task<ChallengeDto> AddChallengeAsync(AddChallengeDto dto, string userId);
     Task<ChallengeDto?> EditChallengeByIdAsync(int id, AddChallengeDto dto, string userId);
     Task<bool> DeleteChallengeByIdAsync(int id, string userId);

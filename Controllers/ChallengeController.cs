@@ -23,7 +23,9 @@ public class ChallengeController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ChallengeDto>>> GetChalanges()
     {
-        var challenges = await _challengeService.GetAllChallengesAsync();
+        var user = await _userManager.GetUserAsync(User);
+        
+        var challenges = await _challengeService.GetAllChallengesAsync(user?.Id);
 
         return Ok(challenges);
     }
@@ -31,7 +33,9 @@ public class ChallengeController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ChallengeDto>> GetChallengeById(int id)
     {
-        var challenge = await _challengeService.GetChallengeByIdAsync(id);
+        var user = await _userManager.GetUserAsync(User);
+
+        var challenge = await _challengeService.GetChallengeByIdAsync(id, user?.Id);
 
         if (challenge == null)
             return NotFound();
