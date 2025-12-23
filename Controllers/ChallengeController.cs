@@ -21,11 +21,11 @@ public class ChallengeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ChallengeDto>>> GetChalanges()
+    public async Task<ActionResult<IEnumerable<ChallengeDto>>> GetChalanges([FromQuery] string? userId)
     {
         var user = await _userManager.GetUserAsync(User);
-        
-        var challenges = await _challengeService.GetAllChallengesAsync(user?.Id);
+
+        var challenges = await _challengeService.GetAllChallengesAsync(userId ?? user?.Id);
 
         return Ok(challenges);
     }
