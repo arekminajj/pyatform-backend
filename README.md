@@ -20,7 +20,7 @@ docker compose up --build
 
 The API will be available at:
 ```
-http://localhost:5000
+http://localhost:8080
 ```
 
 ## License
