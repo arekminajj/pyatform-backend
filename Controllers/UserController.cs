@@ -55,6 +55,20 @@ public class UserController : ControllerBase
         });
     }
 
+    [HttpGet("top")]
+    [Authorize]
+    public async Task<ActionResult<UserDto>> GetTopUsers(
+        [FromQuery] int? limit)
+    {
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+
+        var topUsers = await _userService.GetTopUsersRanking(limit ?? 20);
+
+        return Ok(topUsers);
+    }
+
     [HttpPost("upload-pfp")]
     [Authorize]
     public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file,

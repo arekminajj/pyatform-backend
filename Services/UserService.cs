@@ -1,5 +1,6 @@
 using pyatform.Data;
 using pyatform.DTOs.User;
+using Microsoft.EntityFrameworkCore;
 
 namespace pyatform.Services;
 
@@ -24,5 +25,16 @@ public class UserService : IUserService
             Email = user.Email,
             ProfilePictureUrl = user.ProfilePictureUrl  
         };
+    }
+
+    public async Task<IEnumerable<TopUser>> GetTopUsersRanking(int ranking_limit)
+    {
+        // This expects procedure 'top_users' to be added to the database, which is stored inside /misc in top_users.funcion.sql.
+
+        var results = await _ctx.TopUser
+        .FromSqlInterpolated($"SELECT * FROM top_users({ranking_limit})")
+        .ToListAsync();
+
+        return results;
     }
 }

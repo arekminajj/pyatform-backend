@@ -8,4 +8,5 @@ namespace pyatform.Services;
 public interface IUserService
 {
     Task<UserDto> GetUserByIdAsync(string id);
+    Task<IEnumerable<TopUser>> GetTopUsersRanking(int ranking_limit);
 }

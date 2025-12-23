@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using pyatform.Models;
+using pyatform.DTOs.User;
 
 namespace pyatform.Data;
 
@@ -11,8 +12,12 @@ public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : ba
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<Solution> Solutions { get; set; } 
     public DbSet<TestResult> TestResults { get; set; }
+    public DbSet<TopUser> TopUser { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<TopUser>()
+            .HasNoKey();
+
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Challenge>()
