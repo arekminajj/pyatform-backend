@@ -32,7 +32,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # this maps /top_users_function.sql to docker-entrypoint-initdb.d from which postgres will autoexecute it
-      - ./misc/top_users_function.sql:/docker-entrypoint-initdb.d/top_users_function.sql
+      - ./Misc/top_users_function.sql:/docker-entrypoint-initdb.d/top_users_function.sql
     ports:
       - "5432:5432"
     networks:
