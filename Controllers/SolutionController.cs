@@ -74,6 +74,7 @@ public class SolutionController : ControllerBase
     }
 
     [HttpGet("test/{id}")]
+    [Authorize]
     public async Task<ActionResult<TestResult>> TestSolution(int id)
     {
         var solution = await _solutionService.GetSolutionByIdAsync(id);
