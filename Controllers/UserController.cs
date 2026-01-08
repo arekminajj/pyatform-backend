@@ -16,11 +16,13 @@ public class UserController : ControllerBase
 {
     private readonly UserManager<User> _userManager;
     private readonly IUserService _userService;
+    private readonly IBlobService _blobService;
 
-    public UserController(UserManager<User> userManager, IUserService userService)
+    public UserController(UserManager<User> userManager, IUserService userService, IBlobService blobService)
     {
         _userManager = userManager;
         _userService = userService;
+        _blobService = blobService;
     }
 
     [HttpGet]
@@ -71,8 +73,7 @@ public class UserController : ControllerBase
 
     [HttpPost("upload-pfp")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file,
-        [FromServices] IBlobService blobService)
+    public async Task<ActionResult<UserDto>> UploadProfilePicture(IFormFile file)
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded.");
@@ -84,7 +85,7 @@ public class UserController : ControllerBase
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
 
-        var url = await blobService.UploadFileAsync(file);
+        var url = await _blobService.UploadFileAsync(file);
         user.ProfilePictureUrl = url;
         var result = await _userManager.UpdateAsync(user);
 
